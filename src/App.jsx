@@ -1,26 +1,49 @@
-import React, { useRef } from 'react';
-import { VncScreen } from 'react-vnc';
+import React, { useEffect, useState } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "./firebase";
+import Login from "./components/Login";
+import Register from "./components/Register";
+import Home from "./components/Home";
 
-function App() {
-  const ref = useRef();
+const App = () => {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const routesArray = [
+    {
+      path: "*",
+      element: <Login />,
+    },
+    {
+      path: "/login",
+      element: <Login />,
+    },
+    {
+      path: "/register",
+      element: <Register />,
+    },
+    {
+      path: "/home",
+      element: user ? <Home /> : <Navigate to="/login" />,
+    },
+  ];
 
   return (
-    <VncScreen
-      url='ws://ip:port'
-      scaleViewport
-      background="#000000"
-      style={{
-        width: '75vw',
-        height: '75vh',
-      }}
-      ref={ref}
-      rfbOptions={{
-        credentials: {
-          password: "example",
-        },
-      }}
-    />
+    <Router>
+      <Routes>
+        {routesArray.map((route, index) => (
+          <Route key={index} path={route.path} element={route.element} />
+        ))}
+      </Routes>
+    </Router>
   );
-}
+};
 
 export default App;
